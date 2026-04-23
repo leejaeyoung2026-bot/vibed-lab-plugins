@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://plugins.vibed-lab.com/sitemap.xml

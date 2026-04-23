@@ -1,0 +1,35 @@
+name: Crawl Claude Code plugins
+
+on:
+  schedule:
+    - cron: "0 0 * * 1"
+  workflow_dispatch:
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run crawler
+        run: npm run crawl
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Commit results
+        run: |
+          git config user.name "vibed-lab-bot"
+          git config user.email "bot@vibed-lab.com"
+          git add data/plugins.json
+          git diff --cached --quiet || git commit -m "chore: weekly plugin crawl"
+          git push

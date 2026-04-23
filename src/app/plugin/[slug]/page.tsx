@@ -1,0 +1,87 @@
+import { getPluginBySlug, getAllPlugins } from "@/lib/data";
+import { categoryLabel } from "@/lib/categories";
+import { notFound } from "next/navigation";
+
+export function generateStaticParams() {
+  return getAllPlugins().map((plugin) => ({ slug: plugin.slug }));
+}
+
+export default async function PluginPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const plugin = getPluginBySlug(slug);
+  if (!plugin) notFound();
+
+  const hasCountData =
+    plugin.skillCount > 0 || plugin.agentCount > 0 || plugin.commandCount > 0;
+
+  return (
+    <>
+      <div className="detail-header">
+        <h1>{plugin.owner}/{plugin.repo}</h1>
+        <p className="owner">
+          {plugin.stars.toLocaleString()} stars · Last commit{" "}
+          {new Date(plugin.lastCommit).toISOString().slice(0, 10)}
+        </p>
+        {plugin.description && <p>{plugin.description}</p>}
+        <div className="card-tags" style={{ marginTop: 12 }}>
+          {plugin.hasPluginJson && (
+            <span className="tag-plugin">Plugin</span>
+          )}
+          {plugin.categories.map((cat) => (
+            <a key={cat} href={`/category/${cat}`} className="tag">
+              {categoryLabel(cat)}
+            </a>
+          ))}
+        </div>
+      </div>
+
+      <div className="detail-body">
+        <div>
+          <h2>README preview</h2>
+          {plugin.readmeExcerpt ? (
+            <pre className="readme-excerpt">{plugin.readmeExcerpt}</pre>
+          ) : (
+            <div className="empty-state">No README preview available.</div>
+          )}
+          <p style={{ marginTop: 16 }}>
+            <a href={plugin.url} target="_blank" rel="noreferrer">
+              View full repository on GitHub →
+            </a>
+          </p>
+        </div>
+        <aside>
+          <div className="install-box">
+            <h3>Install</h3>
+            <pre>{plugin.installSnippet}</pre>
+          </div>
+          {hasCountData && (
+            <div className="counts-box">
+              <h3>Includes</h3>
+              <ul>
+                {plugin.skillCount > 0 && (
+                  <li>
+                    <span>{plugin.skillCount}</span> skill{plugin.skillCount !== 1 ? "s" : ""}
+                  </li>
+                )}
+                {plugin.agentCount > 0 && (
+                  <li>
+                    <span>{plugin.agentCount}</span> agent{plugin.agentCount !== 1 ? "s" : ""}
+                  </li>
+                )}
+                {plugin.commandCount > 0 && (
+                  <li>
+                    <span>{plugin.commandCount}</span> command{plugin.commandCount !== 1 ? "s" : ""}
+                  </li>
+                )}
+              </ul>
+            </div>
+          )}
+        </aside>
+      </div>
+    </>
+  );
+}
