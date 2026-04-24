@@ -28,6 +28,7 @@ const SEARCH_QUERIES = [
 const MIN_STARS = 3;
 const MAX_AGE_DAYS = 365;
 const PER_PAGE = 100;
+const MAX_PAGES = 10;
 
 type PreviousSnapshot = Record<string, number>;
 
@@ -43,19 +44,28 @@ function loadPreviousStars(): PreviousSnapshot {
   }
 }
 
-async function searchRepos(query: string) {
+/**
+ * Search repos with pagination (up to MAX_PAGES × PER_PAGE results).
+ * Throws on API error instead of silently returning partial data.
+ */
+async function searchRepos(query: string): Promise<any[]> {
   const results: any[] = [];
-  try {
+  // Append archived:false to exclude archived repos
+  const fullQuery = `${query} archived:false`;
+
+  for (let page = 1; page <= MAX_PAGES; page++) {
     const res = await octokit.search.repos({
-      q: query,
+      q: fullQuery,
       sort: "stars",
       order: "desc",
       per_page: PER_PAGE,
+      page,
     });
     results.push(...res.data.items);
-  } catch (err) {
-    console.warn(`Search failed for "${query}":`, (err as Error).message);
+    // GitHub search caps at 1000 results; stop early if fewer items returned
+    if (res.data.items.length < PER_PAGE) break;
   }
+
   return results;
 }
 
@@ -117,18 +127,21 @@ function daysBetween(iso: string): number {
 
 async function main() {
   const previous = loadPreviousStars();
-  const seen = new Set<string>();
+  // Dedup by numeric repo.id to avoid collisions between owner-repo slug combos
+  const seenIds = new Set<string>();
   const plugins: Plugin[] = [];
   const now = new Date().toISOString();
 
   for (const query of SEARCH_QUERIES) {
     console.log(`Searching: ${query}`);
+    // searchRepos throws on failure — this will propagate to main() catch
+    // and prevent writing partial data to disk
     const repos = await searchRepos(query);
 
     for (const repo of repos) {
-      const slug = `${repo.owner.login}-${repo.name}`.toLowerCase();
-      if (seen.has(slug)) continue;
-      seen.add(slug);
+      const repoId = String(repo.id);
+      if (seenIds.has(repoId)) continue;
+      seenIds.add(repoId);
 
       if (repo.stargazers_count < MIN_STARS) continue;
       if (repo.fork) continue;
@@ -143,9 +156,6 @@ async function main() {
       const topics: string[] = repo.topics ?? [];
       const categories = extractCategories(description, topics, readme);
 
-      const prevStars = previous[slug] ?? repo.stargazers_count;
-      const starsDelta7d = repo.stargazers_count - prevStars;
-
       const [hasPluginJson, skillCount, agentCount, commandCount] =
         await Promise.all([
           detectPluginJson(owner, repoName),
@@ -153,6 +163,18 @@ async function main() {
           countDirectoryEntries(owner, repoName, "agents"),
           countDirectoryEntries(owner, repoName, "commands"),
         ]);
+
+      // Inclusion filter (option b): require plugin.json OR at least one
+      // structured content directory. This passes genuine Claude Code plugin
+      // repos while pruning awesome-lists and prompt-collections that match
+      // search terms but contain no plugin structure at all.
+      const isStructuredPlugin =
+        hasPluginJson || skillCount > 0 || agentCount > 0 || commandCount > 0;
+      if (!isStructuredPlugin) continue;
+
+      const slug = `${owner}-${repoName}`.toLowerCase();
+      const prevStars = previous[slug] ?? repo.stargazers_count;
+      const starsDelta7d = repo.stargazers_count - prevStars;
 
       plugins.push({
         slug,
