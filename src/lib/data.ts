@@ -22,16 +22,6 @@ export function getPluginsByCategory(categorySlug: string): Plugin[] {
     .sort((a, b) => b.stars - a.stars);
 }
 
-export function getCurrentWeekKey(date = new Date()): string {
-  const target = new Date(date.valueOf());
-  const dayNr = (target.getUTCDay() + 6) % 7;
-  target.setUTCDate(target.getUTCDate() - dayNr + 3);
-  const firstThursday = new Date(Date.UTC(target.getUTCFullYear(), 0, 4));
-  const diff = target.getTime() - firstThursday.getTime();
-  const week = 1 + Math.round(diff / (7 * 24 * 3600 * 1000));
-  return `${target.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
-}
-
 export function getLatestFeatured(): FeaturedWeek | null {
   const data = featuredData as FeaturedData;
   const keys = Object.keys(data).sort().reverse();

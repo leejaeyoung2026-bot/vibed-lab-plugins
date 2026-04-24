@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getPluginsByCategory } from "@/lib/data";
 import { CATEGORIES, categoryLabel } from "@/lib/categories";
 import PluginCard from "@/components/PluginCard";
@@ -5,6 +6,35 @@ import { notFound } from "next/navigation";
 
 export function generateStaticParams() {
   return CATEGORIES.map((cat) => ({ slug: cat.slug }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const category = CATEGORIES.find((c) => c.slug === slug);
+  if (!category) return {};
+
+  const label = category.label;
+  const title = `${label} — Vibed Lab Plugins`;
+  const description = `Browse Claude Code plugins in the ${label} category on Vibed Lab Plugins.`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      siteName: "Vibed Lab",
+    },
+    twitter: {
+      card: "summary",
+      title,
+      description,
+    },
+  };
 }
 
 export default async function CategoryPage({

@@ -3,7 +3,7 @@ import {
   getFeaturedPlugins,
   getTrending,
 } from "@/lib/data";
-import { CATEGORIES, categoryLabel } from "@/lib/categories";
+import { CATEGORIES } from "@/lib/categories";
 import PluginCard from "@/components/PluginCard";
 
 export default function Home() {

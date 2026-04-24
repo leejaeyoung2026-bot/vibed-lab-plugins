@@ -26,12 +26,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.7,
   }));
 
-  const pluginEntries: MetadataRoute.Sitemap = plugins.map((plugin) => ({
-    url: `${BASE_URL}/plugin/${plugin.slug}`,
-    lastModified: new Date(plugin.crawledAt),
-    changeFrequency: "weekly",
-    priority: 0.6,
-  }));
+  const pluginEntries: MetadataRoute.Sitemap = plugins.map((plugin) => {
+    const lastCommitDate = new Date(plugin.lastCommit);
+    const lastModified = isNaN(lastCommitDate.getTime())
+      ? today
+      : lastCommitDate;
+    return {
+      url: `${BASE_URL}/plugin/${plugin.slug}`,
+      lastModified,
+      changeFrequency: "weekly",
+      priority: 0.6,
+    };
+  });
 
   return [...staticEntries, ...categoryEntries, ...pluginEntries];
 }
