@@ -129,6 +129,9 @@ async function main() {
   const previous = loadPreviousStars();
   // Dedup by numeric repo.id to avoid collisions between owner-repo slug combos
   const seenIds = new Set<string>();
+  // Track slug -> repoId to detect and disambiguate URL slug collisions
+  // e.g. foo/bar-baz and foo-bar/baz both produce slug "foo-bar-baz"
+  const slugToId = new Map<string, string>();
   const plugins: Plugin[] = [];
   const now = new Date().toISOString();
 
@@ -172,7 +175,15 @@ async function main() {
         hasPluginJson || skillCount > 0 || agentCount > 0 || commandCount > 0;
       if (!isStructuredPlugin) continue;
 
-      const slug = `${owner}-${repoName}`.toLowerCase();
+      const baseSlug = `${owner}-${repoName}`.toLowerCase();
+      // Disambiguate if a different repo already occupies this slug string
+      const existingId = slugToId.get(baseSlug);
+      const slug =
+        existingId !== undefined && existingId !== repoId
+          ? `${baseSlug}-${repoId.slice(-4)}`
+          : baseSlug;
+      slugToId.set(slug, repoId);
+
       const prevStars = previous[slug] ?? repo.stargazers_count;
       const starsDelta7d = repo.stargazers_count - prevStars;
 
