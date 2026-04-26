@@ -1,1 +1,18 @@
-{}
+{
+  "2026-04-27": {
+    "picks": [
+      {
+        "slug": "affaan-m-everything-claude-code",
+        "comment": "The kitchen-sink plugin: 183 skills, 48 agents, 79 commands in one install. Overkill if you want surgical tools, but the right answer if you'd rather inherit a fully-furnished workshop than buy hammers one at a time."
+      },
+      {
+        "slug": "thedotmack-claude-mem",
+        "comment": "Auto-captures every Claude Code session, compresses it, and re-injects the relevant slices into future sessions. The fix for 'Claude forgot what we built yesterday.' +13k stars in a week is not an accident."
+      },
+      {
+        "slug": "forrestchang-andrej-karpathy-skills",
+        "comment": "A single CLAUDE.md derived from Karpathy's notes on where LLM coding agents trip over themselves. Tiny footprint, opinionated guardrails — drop it in and watch your agent stop confidently shipping nonsense."
+      }
+    ]
+  }
+}
