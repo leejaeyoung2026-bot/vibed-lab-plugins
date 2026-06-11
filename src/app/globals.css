@@ -229,7 +229,10 @@ main {
 .detail-body {
   margin-top: 24px;
   display: grid;
-  grid-template-columns: 1fr 260px;
+  /* minmax(0, …) lets the content column shrink below its min-content width;
+     without it a long unbreakable README token (e.g. a shields.io badge URL)
+     forces the 1fr track — and the whole page — wider than the viewport. */
+  grid-template-columns: minmax(0, 1fr) 260px;
   gap: 32px;
 }
 
@@ -245,6 +248,9 @@ main {
   border-radius: 8px;
   padding: 18px;
   white-space: pre-wrap;
+  /* break long unbreakable tokens (badge URLs) so they wrap instead of
+     widening the block; overflow-x stays as a final backstop. */
+  overflow-wrap: anywhere;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 13px;
   overflow-x: auto;
