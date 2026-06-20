@@ -53,6 +53,11 @@ export const CATEGORIES: Category[] = [
   },
 ];
 
+function wordMatch(haystack: string, keyword: string): boolean {
+  const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`\\b${escaped}\\b`).test(haystack);
+}
+
 export function extractCategories(
   description: string,
   topics: string[],
@@ -63,7 +68,7 @@ export function extractCategories(
     .toLowerCase();
   const matched = new Set<string>();
   for (const cat of CATEGORIES) {
-    if (cat.keywords.some((kw) => haystack.includes(kw))) {
+    if (cat.keywords.some((kw) => wordMatch(haystack, kw))) {
       matched.add(cat.slug);
     }
   }
