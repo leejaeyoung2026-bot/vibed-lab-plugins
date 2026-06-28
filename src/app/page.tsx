@@ -27,8 +27,8 @@ export default function Home() {
       {featured.length > 0 ? (
         <section className="section">
           <h2>
-            This week&apos;s featured
-            <span className="count">{featured.length} picks</span>
+            Featured
+            <span className="count">{featured.length} pick{featured.length !== 1 ? "s" : ""}</span>
           </h2>
           <div className="card-grid">
             {featured.map(({ plugin, comment }) => (

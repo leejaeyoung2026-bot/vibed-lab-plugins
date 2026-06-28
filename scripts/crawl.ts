@@ -95,6 +95,17 @@ async function detectPluginJson(owner: string, repo: string): Promise<boolean> {
   }
 }
 
+// Files that live alongside skills/agents/commands but are not items themselves.
+const NON_ENTRY_RE = /^(readme|license|contributing|changelog|\.gitkeep|\.ds_store)/i;
+const NON_ENTRY_EXT_RE = /\.(png|jpe?g|gif|svg|webp|ico)$/i;
+
+/**
+ * Count genuine skill/agent/command items in a directory.
+ * Each item is either a subdirectory or a content file (e.g. a .md), so we
+ * exclude README/LICENSE/.gitkeep/images and other non-item files.
+ * GitHub's getContent caps directory listings at 1000 entries; when we hit
+ * that ceiling the true count is unknown, so we return -1 to signal "1000+".
+ */
 async function countDirectoryEntries(
   owner: string,
   repo: string,
@@ -103,7 +114,15 @@ async function countDirectoryEntries(
   try {
     const res = await octokit.repos.getContent({ owner, repo, path });
     if (Array.isArray(res.data)) {
-      return res.data.length;
+      // GitHub truncates directory listings at 1000 entries.
+      if (res.data.length >= 1000) return -1;
+      return res.data.filter(
+        (entry) =>
+          entry.type === "dir" ||
+          (entry.type === "file" &&
+            !NON_ENTRY_RE.test(entry.name) &&
+            !NON_ENTRY_EXT_RE.test(entry.name))
+      ).length;
     }
     return 0;
   } catch {
@@ -171,8 +190,13 @@ async function main() {
       // structured content directory. This passes genuine Claude Code plugin
       // repos while pruning awesome-lists and prompt-collections that match
       // search terms but contain no plugin structure at all.
+      // A count of -1 means the directory exists but is too large to count
+      // exactly (1000+), so it still counts as structured.
       const isStructuredPlugin =
-        hasPluginJson || skillCount > 0 || agentCount > 0 || commandCount > 0;
+        hasPluginJson ||
+        skillCount !== 0 ||
+        agentCount !== 0 ||
+        commandCount !== 0;
       if (!isStructuredPlugin) continue;
 
       const baseSlug = `${owner}-${repoName}`.toLowerCase();

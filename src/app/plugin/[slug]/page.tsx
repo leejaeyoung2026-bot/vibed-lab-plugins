@@ -46,8 +46,13 @@ export default async function PluginPage({
   const plugin = getPluginBySlug(slug);
   if (!plugin) notFound();
 
+  // A count of -1 means "1000+" (directory too large for GitHub to list exactly).
   const hasCountData =
-    plugin.skillCount > 0 || plugin.agentCount > 0 || plugin.commandCount > 0;
+    plugin.skillCount !== 0 ||
+    plugin.agentCount !== 0 ||
+    plugin.commandCount !== 0;
+
+  const formatCount = (n: number) => (n < 0 ? "1000+" : String(n));
 
   const lastCommitDate = (() => {
     const d = new Date(plugin.lastCommit);
@@ -98,19 +103,19 @@ export default async function PluginPage({
             <div className="counts-box">
               <h3>Includes</h3>
               <ul>
-                {plugin.skillCount > 0 && (
+                {plugin.skillCount !== 0 && (
                   <li>
-                    <span>{plugin.skillCount}</span> skill{plugin.skillCount !== 1 ? "s" : ""}
+                    <span>{formatCount(plugin.skillCount)}</span> skill{plugin.skillCount !== 1 ? "s" : ""}
                   </li>
                 )}
-                {plugin.agentCount > 0 && (
+                {plugin.agentCount !== 0 && (
                   <li>
-                    <span>{plugin.agentCount}</span> agent{plugin.agentCount !== 1 ? "s" : ""}
+                    <span>{formatCount(plugin.agentCount)}</span> agent{plugin.agentCount !== 1 ? "s" : ""}
                   </li>
                 )}
-                {plugin.commandCount > 0 && (
+                {plugin.commandCount !== 0 && (
                   <li>
-                    <span>{plugin.commandCount}</span> command{plugin.commandCount !== 1 ? "s" : ""}
+                    <span>{formatCount(plugin.commandCount)}</span> command{plugin.commandCount !== 1 ? "s" : ""}
                   </li>
                 )}
               </ul>
